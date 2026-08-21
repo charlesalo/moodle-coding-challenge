@@ -1,0 +1,21 @@
+# Local AI assistant instructions, not part of the deliverable
+CLAUDE.md
+
+# Environment
+.env
+
+# Dependencies
+/vendor/
+/web/node_modules/
+
+# Uploaded CSVs awaiting import
+/storage/tmp/*
+!/storage/tmp/.gitkeep
+
+# Build output from the React app
+/public/assets/
+/public/index.html
+
+# Tooling
+.phpunit.result.cache
+.DS_Store
