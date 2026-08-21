@@ -1,0 +1,4 @@
+name,surname,email
+john,smith,john@example.com
+extra,columns,here,oops
+short,row

@@ -1,0 +1,4 @@
+name,surname,email
+"multi
+line",smith,multi@example.com
+after,newline,after@example.com
