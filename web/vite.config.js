@@ -13,7 +13,18 @@ export default defineConfig({
   base: './',
   build: {
     outDir: '../public',
+    // Must stay false: public/ also holds api/*.php, which a clean would delete.
     emptyOutDir: false,
+    rollupOptions: {
+      // Stable filenames rather than content hashes. The build output is
+      // committed so the app runs without Node, and hashed names would leave a
+      // new orphaned file in git on every rebuild (emptyOutDir cannot clean up).
+      output: {
+        entryFileNames: 'assets/app.js',
+        chunkFileNames: 'assets/[name].js',
+        assetFileNames: 'assets/app.[ext]',
+      },
+    },
   },
   server: {
     proxy: {

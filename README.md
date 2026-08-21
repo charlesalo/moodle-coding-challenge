@@ -63,7 +63,7 @@ storage/tmp/                 Uploads awaiting import (gitignored, swept hourly)
 | PHP | 8.3+ | with `pdo_pgsql` and `mbstring` |
 | PostgreSQL | 12+ | developed against 16 |
 | Composer | 2.x | PSR-4 autoloading and PHPUnit |
-| Node.js | 18+ | only needed to build or develop the React UI |
+| Node.js | 18+ | **optional** — only to modify the UI; the build is committed |
 
 Runtime PHP dependencies: **none**. The only Composer requirement is PHPUnit, and it is
 a dev dependency. Runtime JS dependencies are `react` and `react-dom`; `vite` and
@@ -104,7 +104,11 @@ cp .env.example .env      # then edit .env for your database
 php user_upload.php --create-table
 ```
 
-To build the web UI:
+That is everything needed to run the CLI and the web UI.
+
+**Node is not required to review this project.** The built React app
+(`public/index.html` and `public/assets/`) is committed, so Apache can serve it straight
+from a fresh clone. You only need Node if you want to change the UI:
 
 ```bash
 cd web
@@ -112,8 +116,8 @@ npm install
 npm run build             # emits into ../public
 ```
 
-The built assets (`public/index.html`, `public/assets/`) are gitignored, so run the build
-once after cloning.
+Asset filenames are stable (`app.js`, `app.css`) rather than content-hashed, so a rebuild
+overwrites the previous output instead of leaving an orphaned file behind in git.
 
 ---
 
@@ -166,11 +170,7 @@ CREATE TABLE users (
 
 ### Option A — everything served by Apache (how the submission is meant to be reviewed)
 
-```bash
-cd web && npm run build      # emits into ../public
-```
-
-Point your web server's document root at `public/`, or browse to the project under an
+The built app is committed, so there is no build step. Point your web server's document root at `public/`, or browse to the project under an
 existing root. With MAMP's default root and this folder inside `htdocs/`:
 
 ```
