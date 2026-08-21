@@ -19,3 +19,4 @@ CLAUDE.md
 # Tooling
 .phpunit.result.cache
 .DS_Store
+.phpunit.cache/
