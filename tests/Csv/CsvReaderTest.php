@@ -128,6 +128,32 @@ final class CsvReaderTest extends TestCase
         self::assertSame(4, $rows[1][0], 'the following row is on line 4, not line 3');
     }
 
+    /** Error messages must be able to name the user's file, not the server path. */
+    public function testUsesTheGivenLabelInErrorMessages(): void
+    {
+        $this->expectException(CsvException::class);
+        $this->expectExceptionMessage('CSV file is empty: my-upload.csv');
+
+        iterator_to_array(
+            (new CsvReader($this->fixture('empty.csv'), 'my-upload.csv'))->rows(),
+            false,
+        );
+    }
+
+    public function testLabelDoesNotLeakTheStoragePath(): void
+    {
+        try {
+            iterator_to_array(
+                (new CsvReader('/var/private/storage/abc123.csv', 'users.csv'))->rows(),
+                false,
+            );
+            self::fail('Expected a CsvException.');
+        } catch (CsvException $e) {
+            self::assertStringNotContainsString('/var/private/storage', $e->getMessage());
+            self::assertStringContainsString('users.csv', $e->getMessage());
+        }
+    }
+
     /** Line numbers must match the sample file the brief ships. */
     public function testLineNumbersMatchTheSampleFile(): void
     {

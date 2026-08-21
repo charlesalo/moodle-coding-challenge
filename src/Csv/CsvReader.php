@@ -18,8 +18,16 @@ final class CsvReader
 {
     public const REQUIRED_COLUMNS = ['name', 'surname', 'email'];
 
-    public function __construct(private readonly string $path)
+    private readonly string $label;
+
+    /**
+     * @param string|null $label name to use in error messages. Lets the web
+     *                           endpoints report the file the user chose
+     *                           rather than the server path it was stored at.
+     */
+    public function __construct(private readonly string $path, ?string $label = null)
     {
+        $this->label = $label ?? $path;
     }
 
     /**
@@ -35,7 +43,7 @@ final class CsvReader
 
             $header = $this->readRecord($handle, $line);
             if ($header === null) {
-                throw new CsvException(sprintf('CSV file is empty: %s', $this->path));
+                throw new CsvException(sprintf('CSV file is empty: %s', $this->label));
             }
 
             $this->assertHeaderIsValid($header[0]);
@@ -62,20 +70,20 @@ final class CsvReader
     private function open()
     {
         if (!file_exists($this->path)) {
-            throw new CsvException(sprintf('CSV file not found: %s', $this->path));
+            throw new CsvException(sprintf('CSV file not found: %s', $this->label));
         }
 
         if (is_dir($this->path)) {
-            throw new CsvException(sprintf('Expected a CSV file but found a directory: %s', $this->path));
+            throw new CsvException(sprintf('Expected a CSV file but found a directory: %s', $this->label));
         }
 
         if (!is_readable($this->path)) {
-            throw new CsvException(sprintf('CSV file is not readable (check permissions): %s', $this->path));
+            throw new CsvException(sprintf('CSV file is not readable (check permissions): %s', $this->label));
         }
 
         $handle = @fopen($this->path, 'r');
         if ($handle === false) {
-            throw new CsvException(sprintf('Could not open CSV file: %s', $this->path));
+            throw new CsvException(sprintf('Could not open CSV file: %s', $this->label));
         }
 
         return $handle;

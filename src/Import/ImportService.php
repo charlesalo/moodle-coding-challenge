@@ -33,11 +33,14 @@ final class ImportService
      * repository is available the lookup is skipped with a notice rather than
      * failing, which keeps dry runs usable with no database configured.
      *
+     * @param string|null $label name to use in file-level error messages,
+     *                            so the web UI can name the file the user
+     *                            chose rather than the server path.
      * @throws \App\Csv\CsvException on a file-level problem
      */
-    public function run(string $path, bool $dryRun = false): ImportReport
+    public function run(string $path, bool $dryRun = false, ?string $label = null): ImportReport
     {
-        $report = $this->validateFile($path, $dryRun);
+        $report = $this->validateFile($path, $dryRun, $label);
 
         if ($report->validCount() === 0) {
             return $report;
@@ -56,12 +59,12 @@ final class ImportService
      * Parse and validate only. Used directly where the caller must be certain
      * nothing can touch the database.
      */
-    public function validateFile(string $path, bool $dryRun = false): ImportReport
+    public function validateFile(string $path, bool $dryRun = false, ?string $label = null): ImportReport
     {
         $this->validator->reset();
 
         $results = [];
-        foreach ((new CsvReader($path))->rows() as [$line, $fields]) {
+        foreach ((new CsvReader($path, $label))->rows() as [$line, $fields]) {
             $results[] = $this->validator->validate(
                 UserRecord::fromFields($fields),
                 $line,
