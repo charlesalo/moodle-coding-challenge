@@ -53,6 +53,16 @@ final class Arguments
             throw new InvalidArgumentException('--file is required unless you pass --create-table or --help.');
         }
 
+        // --create-table drops the table, which is exactly what --dry-run
+        // promises not to do. Refusing is clearer than guessing which half of
+        // the request the user meant.
+        if ($arguments->createTable && $arguments->dryRun) {
+            throw new InvalidArgumentException(
+                '--create-table cannot be combined with --dry-run, because rebuilding the '
+                . 'table would drop existing rows. Run them as separate commands.',
+            );
+        }
+
         return $arguments;
     }
 

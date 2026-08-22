@@ -136,14 +136,14 @@ final class CsvReader
             $normalised[] = mb_strtolower(trim($column), 'UTF-8');
         }
 
-        foreach (self::REQUIRED_COLUMNS as $index => $expected) {
-            if (($normalised[$index] ?? null) !== $expected) {
-                throw new CsvException(sprintf(
-                    'Invalid CSV header. Expected "%s" but found "%s".',
-                    implode(',', self::REQUIRED_COLUMNS),
-                    implode(',', $normalised),
-                ));
-            }
+        // Compared as a whole, so a header carrying extra columns is rejected
+        // once at the file level rather than tripping every single data row.
+        if ($normalised !== self::REQUIRED_COLUMNS) {
+            throw new CsvException(sprintf(
+                'Invalid CSV header. Expected "%s" but found "%s".',
+                implode(',', self::REQUIRED_COLUMNS),
+                implode(',', $normalised),
+            ));
         }
     }
 }

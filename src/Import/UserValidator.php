@@ -68,9 +68,14 @@ final class UserValidator
                     $record->email,
                     $firstSeen,
                 ));
-            } else {
-                $this->seenEmails[$record->email] = $line;
             }
+        }
+
+        // Claim the address only if this row is actually importable. A row
+        // rejected for some other reason never reaches the database, so it must
+        // not make a later well-formed row look like a duplicate of it.
+        if ($errors === []) {
+            $this->seenEmails[$record->email] = $line;
         }
 
         return new RecordResult($line, $record, $errors);

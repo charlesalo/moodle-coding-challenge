@@ -191,6 +191,48 @@ final class UserValidatorTest extends TestCase
         self::assertStringContainsString('Invalid email address format', $second->messages()[0]);
     }
 
+    /**
+     * A row rejected for any reason never reaches the database, so it must not
+     * reserve its address and make a later well-formed row look like a copy.
+     */
+    public function testARejectedRowDoesNotReserveItsEmail(): void
+    {
+        $bad = $this->validator->validate(UserRecord::fromFields(['john', 'smith', 'j@x.com']), 2, 4);
+        $good = $this->check(['john', 'smith', 'j@x.com'], 5);
+
+        self::assertFalse($bad->isValid(), 'the four-column row is still rejected');
+        self::assertTrue($good->isValid(), 'the clean row must not be lost as a duplicate');
+    }
+
+    public function testARowMissingItsNameDoesNotReserveItsEmail(): void
+    {
+        $this->check(['', 'smith', 'j@x.com'], 2);
+
+        self::assertTrue($this->check(['john', 'smith', 'j@x.com'], 5)->isValid());
+    }
+
+    /** The first *importable* row still wins against later duplicates. */
+    public function testTheFirstValidRowStillClaimsTheAddress(): void
+    {
+        self::assertTrue($this->check(['john', 'smith', 'j@x.com'], 2)->isValid());
+
+        $second = $this->check(['jane', 'doe', 'j@x.com'], 3);
+
+        self::assertFalse($second->isValid());
+        self::assertStringContainsString('first seen on line 2', $second->messages()[0]);
+    }
+
+    /** A malformed row that duplicates an earlier valid one is still flagged. */
+    public function testABadRowDuplicatingAValidOneIsStillReported(): void
+    {
+        $this->check(['john', 'smith', 'j@x.com'], 2);
+
+        $result = $this->validator->validate(UserRecord::fromFields(['jane', 'doe', 'j@x.com']), 3, 4);
+
+        self::assertStringContainsString('Expected 3 columns', $result->messages()[0]);
+        self::assertStringContainsString('first seen on line 2', $result->messages()[1]);
+    }
+
     public function testResetClearsDuplicateTracking(): void
     {
         $this->check(['a', 'b', 'a@b.com'], 2);

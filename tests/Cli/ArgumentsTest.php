@@ -94,6 +94,15 @@ final class ArgumentsTest extends TestCase
             'bare argument'        => [['users.csv'], 'Unexpected argument "users.csv"'],
             'flag given a value'   => [['--dry-run=yes'], '--dry-run does not take a value'],
             'dry run with no file' => [['--dry-run'], '--file is required'],
+            // --create-table drops the table; --dry-run promises not to write.
+            'create-table with dry-run' => [
+                ['--create-table', '--dry-run'],
+                '--create-table cannot be combined with --dry-run',
+            ],
+            'create-table, file and dry-run' => [
+                ['--create-table', '--file', 'users.csv', '--dry-run'],
+                '--create-table cannot be combined with --dry-run',
+            ],
         ];
     }
 

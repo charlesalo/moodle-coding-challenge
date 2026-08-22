@@ -90,6 +90,26 @@ final class CsvReaderTest extends TestCase
         $this->read('bad-header.csv');
     }
 
+    /**
+     * An extra header column must be rejected once, at the file level, rather
+     * than producing one identical error on every data row.
+     */
+    public function testThrowsOnHeaderWithAnExtraColumn(): void
+    {
+        $this->expectException(CsvException::class);
+        $this->expectExceptionMessage('Invalid CSV header');
+
+        $this->read('extra-header-column.csv');
+    }
+
+    public function testThrowsOnHeaderWithAMissingColumn(): void
+    {
+        $this->expectException(CsvException::class);
+        $this->expectExceptionMessage('Invalid CSV header');
+
+        $this->read('missing-header-column.csv');
+    }
+
     public function testAcceptsHeaderWithUtf8Bom(): void
     {
         $rows = $this->read('bom-header.csv');
