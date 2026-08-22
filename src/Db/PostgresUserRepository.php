@@ -19,6 +19,14 @@ final class PostgresUserRepository implements UserRepositoryInterface
 {
     private const SCHEMA_FILE = __DIR__ . '/../../sql/schema.sql';
 
+    /**
+     * Emails looked up per query. PostgreSQL caps a prepared statement at
+     * 65535 bind parameters, and an upload well within the size limit can hold
+     * more addresses than that, so the lookup is chunked rather than sent as
+     * one unbounded placeholder list.
+     */
+    private const LOOKUP_CHUNK_SIZE = 1000;
+
     public function __construct(private readonly Database $database)
     {
     }
@@ -43,16 +51,23 @@ final class PostgresUserRepository implements UserRepositoryInterface
             return [];
         }
 
-        $placeholders = implode(',', array_fill(0, count($emails), '?'));
+        $found = [];
 
         try {
-            $statement = $this->database->connect()->prepare(
-                "SELECT email FROM users WHERE email IN ($placeholders)"
-            );
-            $statement->execute(array_values($emails));
+            $connection = $this->database->connect();
 
-            /** @var list<string> $found */
-            $found = $statement->fetchAll(PDO::FETCH_COLUMN, 0);
+            foreach (array_chunk(array_values($emails), self::LOOKUP_CHUNK_SIZE) as $chunk) {
+                $placeholders = implode(',', array_fill(0, count($chunk), '?'));
+
+                $statement = $connection->prepare(
+                    "SELECT email FROM users WHERE email IN ($placeholders)"
+                );
+                $statement->execute($chunk);
+
+                foreach ($statement->fetchAll(PDO::FETCH_COLUMN, 0) as $email) {
+                    $found[] = (string) $email;
+                }
+            }
         } catch (PDOException $e) {
             throw new DatabaseException(
                 'Could not check existing email addresses: ' . $e->getMessage(),

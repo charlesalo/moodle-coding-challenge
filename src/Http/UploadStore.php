@@ -111,7 +111,11 @@ final class UploadStore
         }
 
         if (!is_writable($this->directory)) {
-            throw new RuntimeException('The upload directory is not writable: ' . $this->directory);
+            // The path goes to the log, not to the client: the message reaches
+            // the browser verbatim and would disclose the install location.
+            error_log('Upload directory is not writable: ' . $this->directory);
+
+            throw new RuntimeException('The server cannot store uploads. Please contact an administrator.');
         }
     }
 }

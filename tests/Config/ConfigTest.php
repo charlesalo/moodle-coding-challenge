@@ -57,6 +57,26 @@ final class ConfigTest extends TestCase
         self::assertSame('from-environment', $config->database()['host']);
     }
 
+    /**
+     * An exported-but-empty variable is still set, so it must win. Otherwise
+     * deliberately blanking DB_PASS silently picks up a stale .env value.
+     */
+    public function testEmptyEnvironmentVariableStillOverridesEnvFile(): void
+    {
+        file_put_contents($this->envFile, "DB_HOST=from-file\n");
+        putenv('DB_HOST=');
+
+        self::assertSame('', Config::load($this->envFile)->database()['host']);
+    }
+
+    public function testUnsetVariableFallsBackToEnvFile(): void
+    {
+        file_put_contents($this->envFile, "DB_HOST=from-file\n");
+        putenv('DB_HOST');
+
+        self::assertSame('from-file', Config::load($this->envFile)->database()['host']);
+    }
+
     public function testWorksWithNoEnvFilePresent(): void
     {
         $config = Config::load('/nonexistent/.env');

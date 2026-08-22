@@ -110,6 +110,29 @@ final class PostgresUserRepositoryTest extends TestCase
         self::assertSame(['john@example.com'], $found);
     }
 
+    /**
+     * PostgreSQL caps a prepared statement at 65535 bind parameters, so the
+     * lookup is chunked. Exercised with more addresses than one chunk holds.
+     */
+    public function testFindExistingEmailsHandlesMoreAddressesThanOneChunk(): void
+    {
+        $records = [];
+        for ($i = 0; $i < 2500; $i++) {
+            $records[] = new UserRecord('User', (string) $i, "user{$i}@example.com");
+        }
+        $this->repository->insertMany($records);
+
+        // Ask about every stored address plus as many that are not stored.
+        $lookup = array_map(static fn (int $i): string => "user{$i}@example.com", range(0, 4999));
+
+        $found = $this->repository->findExistingEmails($lookup);
+
+        self::assertCount(2500, $found);
+        self::assertContains('user0@example.com', $found);
+        self::assertContains('user2499@example.com', $found);
+        self::assertNotContains('user2500@example.com', $found);
+    }
+
     public function testFindExistingEmailsWithNoInputDoesNotQuery(): void
     {
         self::assertSame([], $this->repository->findExistingEmails([]));

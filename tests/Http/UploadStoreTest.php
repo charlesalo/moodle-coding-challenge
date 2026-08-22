@@ -135,6 +135,34 @@ final class UploadStoreTest extends TestCase
         }
     }
 
+    /**
+     * This message is rendered straight into a JSON error response, so it must
+     * not disclose where the application is installed.
+     */
+    public function testUnwritableDirectoryErrorDoesNotLeakTheServerPath(): void
+    {
+        chmod($this->directory, 0500);
+
+        if (is_writable($this->directory)) {
+            chmod($this->directory, 0775);
+            self::markTestSkipped('Cannot make a directory unwritable as this user.');
+        }
+
+        $source = tempnam(sys_get_temp_dir(), 'src');
+        file_put_contents($source, "name,surname,email\n");
+
+        try {
+            $this->store->store($source, isUpload: false);
+            self::fail('Expected a RuntimeException.');
+        } catch (RuntimeException $e) {
+            self::assertStringNotContainsString($this->directory, $e->getMessage());
+            self::assertStringNotContainsString('/', $e->getMessage());
+        } finally {
+            chmod($this->directory, 0775);
+            @unlink($source);
+        }
+    }
+
     public function testCreatesTheDirectoryWhenMissing(): void
     {
         $nested = $this->directory . '/nested/deeper';

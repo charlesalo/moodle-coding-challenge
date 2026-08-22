@@ -14,10 +14,26 @@ final class Json
 
     public static function send(mixed $payload, int $status = 200): void
     {
+        // Substitute malformed UTF-8 rather than failing: an uploaded filename
+        // echoed back in an error message is not guaranteed to be valid UTF-8.
+        $json = json_encode(
+            $payload,
+            JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE,
+        );
+
+        // Encoding can still fail (recursion, INF/NAN). Never send an empty
+        // body with a success status: the client cannot tell that apart from
+        // a working response.
+        if ($json === false) {
+            error_log('Failed to encode JSON response: ' . json_last_error_msg());
+            $json   = '{"error":"The server could not encode its response."}';
+            $status = 500;
+        }
+
         http_response_code($status);
         header('Content-Type: application/json; charset=utf-8');
         header('Cache-Control: no-store');
-        echo json_encode($payload, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE);
+        echo $json;
     }
 
     public static function error(string $message, int $status = 400): never

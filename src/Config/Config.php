@@ -36,8 +36,10 @@ final class Config
     public function get(string $key, ?string $default = null): ?string
     {
         // getenv() first: a real environment variable overrides the .env file.
+        // An empty value counts as set, so exporting DB_PASS= deliberately
+        // blanks the password instead of silently falling back to .env.
         $fromEnv = getenv($key);
-        if ($fromEnv !== false && $fromEnv !== '') {
+        if ($fromEnv !== false) {
             return $fromEnv;
         }
 
