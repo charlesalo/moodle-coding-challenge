@@ -1,0 +1,27 @@
+# Safety net for deployments that do not point the document root at public/.
+#
+# The intended setup is document root = public/, which makes everything here
+# unreachable anyway. But this project sits inside htdocs/ during development,
+# where the whole tree would otherwise be web-readable: without these rules a
+# browser can fetch .env in plaintext and list storage/tmp, which defeats the
+# unguessable upload token entirely.
+
+# Never expose a directory listing.
+Options -Indexes
+
+# Block dotfiles, .env above all.
+<FilesMatch "^\.">
+    Require all denied
+</FilesMatch>
+
+# Block project metadata that has no business being served.
+<FilesMatch "^(composer\.(json|lock)|phpunit\.xml|package(-lock)?\.json)$">
+    Require all denied
+</FilesMatch>
+
+# Block everything outside public/. The pattern is relative to this directory,
+# so it holds wherever the project is installed.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^(src|tests|storage|vendor|sql|docs|web|node_modules)(/|$) - [F,L]
+</IfModule>

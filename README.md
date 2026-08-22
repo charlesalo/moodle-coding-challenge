@@ -170,14 +170,25 @@ CREATE TABLE users (
 
 ### Option A — everything served by Apache (how the submission is meant to be reviewed)
 
-The built app is committed, so there is no build step. Point your web server's document root at `public/`, or browse to the project under an
-existing root. With MAMP's default root and this folder inside `htdocs/`:
+The built app is committed, so there is no build step.
 
-```
-http://localhost:8888/<project-folder>/public/
+**Point the document root at `public/`.** Only `public/` is meant to be web-reachable;
+everything else — `.env`, `storage/`, `src/`, `vendor/` — must stay outside it.
+
+```apache
+DocumentRoot "/path/to/moodle-coding-challenge/public"
 ```
 
 The UI and the API are then on one origin, so no CORS configuration is involved.
+
+If you are instead dropping the project into an existing document root (MAMP's `htdocs/`,
+say) and browsing to `http://localhost:8888/<project-folder>/public/`, the parent
+directories would ordinarily be served as well. A committed `.htaccess` blocks that: it
+disables directory indexes and denies `.env`, dotfiles, `src/`, `tests/`, `storage/`,
+`sql/`, `docs/`, `web/` and `vendor/`. It needs Apache with `AllowOverride All` (MAMP's
+default). Treat it as a safety net, not a substitute for setting the document root
+correctly — on nginx there is no equivalent, so pointing the root at `public/` is the only
+option there.
 
 ### Option B — Vite dev server (for working on the UI)
 
@@ -441,6 +452,17 @@ A record whose address already exists — in the file or in the database — is 
 error. There is no update-existing-user behaviour; that is out of scope for the brief.
 Within a file, the **first** occurrence wins and every later one is flagged, naming the
 earlier line.
+
+### Only `public/` belongs on the web
+
+The document root is meant to be `public/`. Everything else in the tree is application
+internals, and two parts are actively sensitive: `.env` holds database credentials in
+plaintext, and `storage/tmp/` holds uploaded CSVs of personal data awaiting import.
+
+A directory listing over `storage/tmp/` would defeat the upload token entirely — the
+token's only protection is that it cannot be guessed, and a listing hands it over. The
+committed `.htaccess` therefore disables indexes and denies those paths, so a deployment
+that gets the document root wrong fails safe instead of quietly serving credentials.
 
 ### Errors are surfaced, never leaked
 
